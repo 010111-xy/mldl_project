@@ -3,3 +3,5 @@
 ## Reference
 
 - Solving Rubik's Cube with a Robot Hand <https://arxiv.org/abs/1910.07113>
+
+## python -m basic_algorithm.train_reinforce

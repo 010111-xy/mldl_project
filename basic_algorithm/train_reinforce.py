@@ -7,8 +7,8 @@ import torch
 import gym
 
 from datetime import datetime
-from reinforce_relu import REINFORCE as REINFORCE_RELU, PolicyNetwork as REINFORCE_RELU_POLICY
-from reinforce_tanh import REINFORCE as REINFORCE_TANH, PolicyNetwork as REINFORCE_TANH_POLICY
+from basic_algorithm.reinforce_relu import REINFORCE as REINFORCE_RELU, PolicyNetwork as REINFORCE_RELU_POLICY
+from basic_algorithm.reinforce_tanh import REINFORCE as REINFORCE_TANH, PolicyNetwork as REINFORCE_TANH_POLICY
 from env.custom_hopper import *
 from torch.utils.tensorboard import SummaryWriter
 
