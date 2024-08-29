@@ -19,7 +19,7 @@ class PolicyNetwork(torch.nn.Module):
         self.state_space = state_space
         self.action_space = action_space
         self.hidden = 64
-        self.relu = torch.nn.ReLU()
+        self.tanh = torch.nn.Tanh()
 
         """
             Actor network
@@ -39,7 +39,7 @@ class PolicyNetwork(torch.nn.Module):
     def init_weights(self):
         for m in self.modules():
             if type(m) is torch.nn.Linear:
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.xavier_normal_(m.weight)
                 torch.nn.init.zeros_(m.bias)
 
 
@@ -47,8 +47,8 @@ class PolicyNetwork(torch.nn.Module):
         """
             Actor
         """
-        x_actor = self.relu(self.fc1_actor(x))
-        x_actor = self.relu(self.fc2_actor(x_actor))
+        x_actor = self.tanh(self.fc1_actor(x))
+        x_actor = self.tanh(self.fc2_actor(x_actor))
         action_mean = self.fc3_actor_mean(x_actor)
 
         sigma = self.sigma_activation(self.sigma)
@@ -81,20 +81,11 @@ class REINFORCE(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
-        #
-        # TASK 2:
-        #   - compute discounted returns
-        #   - compute policy gradient loss function given actions and returns
-        #   - compute gradients and step the optimizer
-        #
-
-        # compute discounted returns
         discounted_returns = discount_rewards(rewards, self.gamma)
+        baseline = discounted_returns.mean()
         # compute policy gradient loss function given actions and returns
-        # policy_loss = -(action_log_probs * discounted_returns).mean()
-        policy_loss = -(action_log_probs * (discounted_returns - 20)).mean()
+        policy_loss = -(action_log_probs * (discounted_returns - baseline)).mean()
         
-        # compute gradients and step the optimizer
         self.optimizer.zero_grad()
         policy_loss.backward()
         self.optimizer.step()
