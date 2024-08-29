@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.distributions import Normal
@@ -19,7 +18,7 @@ class PolicyNetwork(torch.nn.Module):
         self.state_space = state_space
         self.action_space = action_space
         self.hidden = 64
-        self.relu = torch.nn.ReLU()
+        self.tanh = torch.nn.Tanh()
 
         """
             Actor network
@@ -47,8 +46,8 @@ class PolicyNetwork(torch.nn.Module):
         """
             Actor
         """
-        x_actor = self.relu(self.fc1_actor(x))
-        x_actor = self.relu(self.fc2_actor(x_actor))
+        x_actor = self.tanh(self.fc1_actor(x))
+        x_actor = self.tanh(self.fc2_actor(x_actor))
         action_mean = self.fc3_actor_mean(x_actor)
 
         sigma = self.sigma_activation(self.sigma)
@@ -82,7 +81,8 @@ class REINFORCE(object):
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
         discounted_returns = discount_rewards(rewards, self.gamma)
-        baseline = discounted_returns.mean()
+        #baseline = discounted_returns.mean()
+        baseline = 20
         # compute policy gradient loss function given actions and returns
         policy_loss = -(action_log_probs * (discounted_returns - baseline)).mean()
         

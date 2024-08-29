@@ -7,8 +7,8 @@ import torch
 import gym
 
 from datetime import datetime
-from basic_algorithm.reinforce_relu import REINFORCE as REINFORCE_RELU, PolicyNetwork as REINFORCE_RELU_POLICY
-from basic_algorithm.reinforce_tanh import REINFORCE as REINFORCE_TANH, PolicyNetwork as REINFORCE_TANH_POLICY
+from basic_algorithm.reinforce_normal import REINFORCE as REINFORCE_NORMAL, PolicyNetwork as REINFORCE_NORMAL_POLICY
+from basic_algorithm.reinforce_xavier import REINFORCE as REINFORCE_XAVIER, PolicyNetwork as REINFORCE_XAVIER_POLICY
 from env.custom_hopper import *
 from torch.utils.tensorboard import SummaryWriter
 
@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--n-episodes', default=100000, type=int, help='Number of training episodes')
     parser.add_argument('--print-every', default=20000, type=int, help='Print info every <> episodes')
     parser.add_argument('--device', default='cpu', type=str, help='network device [cpu, cuda]')
-    parser.add_argument('--model-type', default='REINFORCE_RELU', type=str, help='model type [REINFORCE_RELU, REINFORCE_TANH]')
+    parser.add_argument('--model-type', default='REINFORCE_NORMAL', type=str, help='model type [REINFORCE_NORMAL, REINFORCE_XAVIER]')
 
     return parser.parse_args()
 
@@ -42,14 +42,14 @@ def main():
 	observation_space_dim = env.observation_space.shape[-1]
 	action_space_dim = env.action_space.shape[-1]
 
-	if args.model_type == 'REINFORCE_RELU':
-		policy = REINFORCE_RELU_POLICY(observation_space_dim, action_space_dim)
-		agent = REINFORCE_RELU(policy, device=args.device)
-		print('----REINFORCE_RELU---')
+	if args.model_type == 'REINFORCE_NORMAL':
+		policy = REINFORCE_NORMAL_POLICY(observation_space_dim, action_space_dim)
+		agent = REINFORCE_NORMAL(policy, device=args.device)
+		print('----REINFORCE_NORMAL---')
 	else:
-		policy = REINFORCE_TANH_POLICY(observation_space_dim, action_space_dim)
-		agent = REINFORCE_TANH(policy, device=args.device)
-		print('----REINFORCE_TANH---')
+		policy = REINFORCE_XAVIER_POLICY(observation_space_dim, action_space_dim)
+		agent = REINFORCE_XAVIER(policy, device=args.device)
+		print('----REINFORCE_XAVIER---')
 
 
 	for episode in range(args.n_episodes):
