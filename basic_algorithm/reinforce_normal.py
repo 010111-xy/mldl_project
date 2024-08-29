@@ -81,10 +81,8 @@ class REINFORCE(object):
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
 
         discounted_returns = discount_rewards(rewards, self.gamma)
-        #baseline = discounted_returns.mean()
-        baseline = 20
         # compute policy gradient loss function given actions and returns
-        policy_loss = -(action_log_probs * (discounted_returns - baseline)).mean()
+        policy_loss = -(action_log_probs * (discounted_returns - 20)).mean()
         
         self.optimizer.zero_grad()
         policy_loss.backward()
