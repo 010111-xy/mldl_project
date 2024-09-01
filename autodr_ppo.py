@@ -13,13 +13,15 @@ class CustomEnvWrapper(Wrapper):
 
     def set_env_parameter(self, index, value):
     # Modify the environment based on the index and value
-    # Here, you would implement the logic to change the desired parameter in the environment
-    # For example, if 'index' corresponds to a specific physical property like leg mass:
-        if index == 0:  # Assuming index 0 controls leg mass
-            self.env.leg_mass = value  # Update the leg_mass attribute of the environment
+        if index == 0:  # Thigh mass
+            self.env.model.body_mass[self.env.model.body_name2id('thigh')] = value
+        elif index == 1:  # Leg mass
+            self.env.model.body_mass[self.env.model.body_name2id('leg')] = value
+        elif index == 2:  # Foot mass
+            self.env.model.body_mass[self.env.model.body_name2id('foot')] = value
         else:
             raise NotImplementedError("Invalid parameter index")
-
+        
     def set_env_parameters(self, parameters):
         for index, value in enumerate(parameters):
             self.set_env_parameter(index, value)
@@ -39,18 +41,21 @@ def evaluate_performance(env, model):
 original_env = gym.make('CustomHopper-v0')
 wrapped_env = CustomEnvWrapper(original_env)
 env = DummyVecEnv([lambda: wrapped_env])
-model = PPO('MlpPolicy', env, verbose=1)
+model = PPO('MlpPolicy', env, verbose=0)
 
-# ADR Parameters
-phi_i_L = np.array([0.1] * env.observation_space.shape[0])
-phi_i_H = np.array([0.9] * env.observation_space.shape[0])
+# ADR Parameters: Define custom ranges for thigh, leg, and foot masses
+phi_i_L = np.array([3.9, 2.7, 4.9])  # Lower bounds for thigh, leg, and foot masses
+phi_i_H = np.array([4.1, 2.9, 5.1])  # Upper bounds for thigh, leg, and foot masses
 phi = np.random.uniform(phi_i_L, phi_i_H)
+#step size for adjusting phi_i
 delta = 0.05
+#performance thresholds for adjusting bounds
 t_L, t_H = 0.1, 0.9
+# num samples required before adjusting bounds
 m = 10
 
-D_L = [[] for _ in range(env.observation_space.shape[0])]
-D_H = [[] for _ in range(env.observation_space.shape[0])]
+D_L = [[] for _ in range(len(phi))]
+D_H = [[] for _ in range(len(phi))]
 performance_history = []
 
 for episode in range(10000):
