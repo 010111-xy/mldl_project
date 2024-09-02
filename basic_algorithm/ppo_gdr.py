@@ -42,9 +42,10 @@ def main():
   model = source_env.unwrapped.sim.model
 
   # Randomize masses for thigh, leg, and foot
-  thigh_mass = np.random.uniform(mass_bounds['thigh']['low'], mass_bounds['thigh']['high'])
-  leg_mass = np.random.uniform(mass_bounds['leg']['low'], mass_bounds['leg']['high'])
-  foot_mass = np.random.uniform(mass_bounds['foot']['low'], mass_bounds['foot']['high'])
+  thigh_mass = np.random.normal((mass_bounds['thigh']['low'] + mass_bounds['thigh']['high']) / 2, (mass_bounds['thigh']['high'] - mass_bounds['thigh']['low']) / 6)
+  leg_mass = np.random.normal((mass_bounds['leg']['low'] + mass_bounds['leg']['high']) / 2, (mass_bounds['leg']['high'] + mass_bounds['leg']['low']) / 6)
+  foot_mass = np.random.normal((mass_bounds['foot']['low'] + mass_bounds['foot']['high']) / 2, (mass_bounds['foot']['high'] + mass_bounds['foot']['low']) / 6)
+
 
   # Set the masses in the environment
   model.body_mass[2] = thigh_mass       # Thigh mass
@@ -68,17 +69,17 @@ def main():
   for episode in range(1000):
     episode_reward, _ = evaluate_policy(model, env, n_eval_episodes=1, return_episode_rewards=True)
     rewards.append(episode_reward[0])
-    writer.add_scalar('UDR Training/Episode Reward', episode_reward[0], episode)
+    writer.add_scalar('GDR Training/Episode Reward', episode_reward[0], episode)
 
   print('Evaluation End Time:', datetime.now())
   print(f'Mean Reward: {np.mean(rewards)}')
-  model.save("basic_algorithm/model/ppo_udr.zip")
+  model.save("model/ppo_gdr.zip")
   writer.close()
 
 
 def test():
   # Load the trained model
-  trained_model = PPO.load("model/ppo_udr.zip")
+  trained_model = PPO.load("basic_algorithm/model/ppo_gdr.zip")
 
   # Create environments for source and target environments
   source_env = gym.make('CustomHopper-source-v0')

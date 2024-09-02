@@ -2,3 +2,5 @@ basic_algorithm/tensor_board/
 __pycache__/
 *.py[cod]
 *.pyo
+
+logs/
