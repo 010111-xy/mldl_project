@@ -39,39 +39,59 @@ class CustomEnvWrapper(Wrapper):
 def evaluate_performance(env, model):
     obs = env.reset()
     total_reward = 0
+    total_speed = 0
+    total_stability = 0
+    total_balance = 0
     done = False
+    steps = 0
 
     while not done:
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
+        obs, reward, done, info = env.step(action)
+        
+        # Extract the dictionary from the list
+        info_dict = info[0] if isinstance(info, list) and len(info) > 0 else {}
+        
+        # Safely extract metrics from the dictionary
         total_reward += reward
-    return total_reward
+        total_speed += info_dict.get('speed', 0)
+        total_stability += info_dict.get('stability', 0)
+        total_balance += info_dict.get('balance', 0)
+        steps += 1
+    
+    avg_speed = total_speed / steps if steps > 0 else 0
+    avg_stability = total_stability / steps if steps > 0 else 0
+    avg_balance = total_balance / steps if steps > 0 else 0
+    return total_reward, avg_speed, avg_stability, avg_balance
 
 original_env = gym.make('CustomHopper-v0')
 wrapped_env = CustomEnvWrapper(original_env)
 env = DummyVecEnv([lambda: wrapped_env])
-model = PPO('MlpPolicy', env, verbose=0, tensorboard_log="./auto_dr/tensor_board/")
+model = PPO('MlpPolicy', env, verbose=0)
 
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
-phi_i_L = np.array([3.9, 2.7, 4.9, 0.1, 0.1, 0.1])  # Lower bounds for masses and frictions
-phi_i_H = np.array([4.1, 2.9, 5.1, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+phi_i_L = np.array([3.9, 2.7, 4.9, 0.01, 0.01, 0.01])  # Lower bounds for masses and frictions(0.1, 0.01)
+phi_i_H = np.array([4.1, 2.9, 5.1, 0.05, 0.05, 0.05])  # Upper bounds for masses and frictions(0.5, 0.05)
 phi = np.random.uniform(phi_i_L, phi_i_H)
 #step size for adjusting phi_i
-delta = 0.05
+delta = 0.1
 #performance thresholds for adjusting bounds
-t_L, t_H = 0.1, 0.9
+t_L, t_H = 0.4, 0.6
 # num samples required before adjusting bounds
 m = 10
 
 D_L = [[] for _ in range(len(phi))]
 D_H = [[] for _ in range(len(phi))]
 performance_history = []
+speed_history = []
+stability_history = []
+balance_history = []
 
 best_phi = phi.copy() # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/tensor_board/')
+writer = SummaryWriter('auto_dr/tensor_board2/')
 
 
 for episode in range(10000):
@@ -86,12 +106,16 @@ for episode in range(10000):
     
     wrapped_env.set_env_parameter(lambda_i, env_param)
     model.learn(total_timesteps=1000)
-    p = evaluate_performance(env, model)
-    D_i[lambda_i].append(p)
-    performance_history.append(p)
+    reward, avg_speed, avg_stability, avg_balance = evaluate_performance(env, model)
 
-    if p > best_performance:
-        best_performance = p
+    D_i[lambda_i].append(reward)
+    performance_history.append(reward)
+    speed_history.append(avg_speed)
+    stability_history.append(avg_stability)
+    balance_history.append(avg_balance)
+
+    if reward > best_performance:
+        best_performance = reward
         best_phi = phi.copy()
 
     if len(D_i[lambda_i]) >= m:
@@ -104,16 +128,15 @@ for episode in range(10000):
         phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], phi_i_H[lambda_i])
     wrapped_env.set_env_parameters(phi)
 
-    writer.add_scalar(f'Episode Performance', p, episode)
+    writer.add_scalar(f'Episode Performance', reward, episode)
+    writer.add_scalar(f'Episode Average Speed', avg_speed, episode)
+    writer.add_scalar(f'Episode Average Stability', avg_stability, episode)
+    writer.add_scalar(f'Episode Average Balance', avg_balance, episode)
 
     if episode % 100 == 0:
-        print(f"Episode {episode}: Performance = {p}")
+        print(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}")
 
-plt.figure(figsize=(10, 6))
-plt.plot(performance_history)
-plt.xlabel('Episode')
-plt.ylabel('Total Reward')
-plt.title('Performance of the Model Throughout Training Episodes')
-plt.show()
+print(f'Best performance: {best_performance}')
+print(f'Best parameters: {best_phi}')
 
 writer.close()
