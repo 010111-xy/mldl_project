@@ -61,15 +61,33 @@ class CustomHopper(MujocoEnv, utils.EzPickle):
         posbefore = self.sim.data.qpos[0]
         self.do_simulation(a, self.frame_skip)
         posafter, height, ang = self.sim.data.qpos[0:3]
+
+        # Speed calculation (distance traveled along X axis per timestep)
+        speed = (posafter - posbefore) / self.dt
+
         alive_bonus = 1.0
-        reward = (posafter - posbefore) / self.dt
-        reward += alive_bonus
+        #reward = (posafter - posbefore) / self.dt
+        reward = speed + alive_bonus
         reward -= 1e-3 * np.square(a).sum()
         s = self.state_vector()
         done = not (np.isfinite(s).all() and (np.abs(s[2:]) < 100).all() and (height > .7) and (abs(ang) < .2))
         ob = self._get_obs()
 
-        return ob, reward, done, {}
+        # Stability: how close the height is to the desired stable height (assumed 1.0 here)
+        stable_height = 1.0 # 1.0 meter is a reasonable and convenient assumption for the height of a standing robot.
+        stability = abs(height - stable_height)
+
+        # Balance: how close the angular position is to zero (perfect balance)
+        balance = abs(ang)
+
+        # Info dictionary to include the custom information
+        info = {
+            'speed': speed,  # Forward speed
+            'stability': stability,  # Stability based on height
+            'balance': balance,  # Balance based on angular position
+        }
+
+        return ob, reward, done, info
 
 
     def _get_obs(self):
@@ -145,4 +163,3 @@ gym.envs.register(
         max_episode_steps=500,
         kwargs={"domain": "target"}
 )
-
