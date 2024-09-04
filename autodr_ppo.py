@@ -59,7 +59,7 @@ D_H = [[] for _ in range(len(phi))]
 performance_history = []
 
 for episode in range(10000):
-    lambda_i = np.random.choice(len(phi))
+    lambda_i = np.random.choice(len(phi)) #here i am only randomizing one parameter at once
     x = np.random.rand()
     if x < 0.5:
         env_param = phi_i_L[lambda_i]
