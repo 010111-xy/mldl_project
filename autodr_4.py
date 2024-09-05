@@ -151,7 +151,7 @@ for ep, params in under_1000_rewards:
     print(f"Episode {ep}: Parameters = {params}")
 
 # Plotting and saving plots as PNG files
-plt.figure(figsize=(15, 10))
+plt.figure(figsize=(15, 20))
 
 plt.subplot(2, 1, 1)
 plt.plot(performance_history, label='Total Reward')
