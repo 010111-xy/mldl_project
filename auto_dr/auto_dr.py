@@ -72,11 +72,10 @@ model = PPO('MlpPolicy', env, verbose=0)
 
 parameters_num = 6
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
-phi_i_L = np.array([3.8, 2.7, 5, 0.01, 0.01, 0.01])  # Lower bounds for masses and frictions
-phi_i_H = np.array([4.9, 3.6, 6.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+phi_i_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])  # Lower bounds for masses and frictions
+phi_i_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
 
-phi_min = np.array([3.0, 2.0, 4.0, 0, 0, 0])
-phi_max = np.array([12.5, 12.5, 12.5, 8, 8, 8])
+phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 
 #step size for adjusting phi_i1
 delta = 0.1
@@ -137,38 +136,34 @@ for episode in range(10000):
     if len(D_i[lambda_i]) >= m:
         avg_p = np.mean(D_i[lambda_i])
         D_i[lambda_i] = []
+        if x < 0.5:
+            D_L[lambda_i] = []
+        else:
+            D_H[lambda_i] = []
 
-        # if avg_p < best_performance * 0.9:
-        #     # avoid vanishing
-        #     delta = max(delta * 0.5, 0.25)
-        # else:
-        #     delta = min(delta * 1.05, 0.1)
         if avg_p >= t_H:
             if x < 0.5:
-                phi_i_L[lambda_i] += delta
-                action = f"phi_i_L[{lambda_i}] increased by {delta}"
-            else:
-                phi_i_H[lambda_i] += delta
-                action = f"phi_i_H[{lambda_i}] increased by {delta}"
-
-        elif avg_p <= t_L:
-            if x < 0.5:
+                # decrease lower bound
                 phi_i_L[lambda_i] = max(phi_i_L[lambda_i] - delta, phi_min[lambda_i])
                 action = f"phi_i_L[{lambda_i}] decreased by {delta}"
             else:
+                # increase upper bound
+                phi_i_H[lambda_i] += delta
+                action = f"phi_i_H[{lambda_i}] increased by {delta}"
+            
+        elif avg_p <= t_L:
+            if x < 0.5:
+                # increase lower bound
+                phi_i_L[lambda_i] += delta
+                action = f"phi_i_L[{lambda_i}] increased by {delta}"
+            else:
+                # decrease upper bound
                 phi_i_H[lambda_i] = max(phi_i_H[lambda_i] - delta, phi_min[lambda_i])
                 action = f"phi_i_H[{lambda_i}] decreased by {delta}"
 
         with open("update_bound_log.txt", "a") as log_file:
             log_file.write(f"Episode {episode}: lambda_i = {lambda_i}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}, Action: {action}\n")
  
-        
-        # Ensure phi stays within the current bounds
-        # phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], phi_i_H[lambda_i])
-        # phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], min(phi_i_H[lambda_i], phi_max[lambda_i]))
-
-
-    #wrapped_env.set_env_parameters(phi)
 
     writer.add_scalar(f'Episode Performance', reward, episode)
     writer.add_scalar(f'Episode Average Speed', avg_speed, episode)
