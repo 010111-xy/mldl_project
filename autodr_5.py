@@ -92,11 +92,11 @@ for episode in range(10000):
     i = np.random.choice(6)  # Randomize one parameter at a time
     x = np.random.rand()
     if x < 0.5:
-        lambda_i = phi_L[i]
+        lambda_vec[i] = phi_L[i]
     else:
-        lambda_i = phi_H[i]
+        lambda_vec[i] = phi_H[i]
     
-    wrapped_env.set_env_parameter(i, lambda_i)
+    wrapped_env.set_env_parameters(lambda_vec)
     
     model.learn(total_timesteps=1000)
     reward, speed, stability, balance = evaluate_performance(env, model)
