@@ -119,9 +119,9 @@ for episode in range(10000):
             elif avg_reward <= t_L:
                 phi_H[i] -= delta
                 phi_L[i] = max(phi_L[i]-delta, phi_min[i])
-
-        # Ensure lambda stays within the current bounds
-        lambda_vec[i] = np.clip(lambda_vec[i], phi_L[i], phi_H[i])
+            # Ensure lambda stays within the current bounds
+            lambda_vec[i] = np.clip(lambda_vec[i], phi_L[i], phi_H[i])
+        
         wrapped_env.set_env_parameters(lambda_vec)
     else:
         D_H[i].append(reward)
@@ -134,9 +134,8 @@ for episode in range(10000):
             elif avg_reward <= t_L:
                 phi_H[i] -= delta
                 phi_L[i] = max(phi_L[i]-delta, phi_min[i])
-        
-        # Ensure lambda stays within the current bounds
-        lambda_vec[i] = np.clip(lambda_vec[i], phi_L[i], phi_H[i])
+            # Ensure lambda stays within the current bounds
+            lambda_vec[i] = np.clip(lambda_vec[i], phi_L[i], phi_H[i])
         wrapped_env.set_env_parameters(lambda_vec)
 
     if episode % 10 == 0:
