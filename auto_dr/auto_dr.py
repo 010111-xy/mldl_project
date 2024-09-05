@@ -70,10 +70,15 @@ env = DummyVecEnv([lambda: wrapped_env])
 model = PPO('MlpPolicy', env, verbose=0)
 
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
-phi_i_L = np.array([3.9, 2.7, 4.9, 0.01, 0.01, 0.01])  # Lower bounds for masses and frictions(0.1, 0.01)
-phi_i_H = np.array([4.1, 2.9, 5.1, 0.05, 0.05, 0.05])  # Upper bounds for masses and frictions(0.5, 0.05)
+phi_i_L = np.array([3.8, 2.7, 5, 0.01, 0.01, 0.01])  # Lower bounds for masses and frictions
+phi_i_H = np.array([4.9, 3.6, 6.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
 phi = np.random.uniform(phi_i_L, phi_i_H)
-#step size for adjusting phi_i
+
+
+# phi_min = np.array([3.0, 2.0, 4.0, 0, 0, 0])
+phi_max = np.array([12.5, 12.5, 12.5, 8, 8, 8])
+
+#step size for adjusting phi_i1
 delta = 0.1
 #performance thresholds for adjusting bounds
 t_L, t_H = 0.4, 0.6
@@ -91,7 +96,7 @@ best_phi = phi.copy() # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/tensor_board2/')
+writer = SummaryWriter('auto_dr/tensor_board3/')
 
 
 for episode in range(10000):
@@ -121,11 +126,24 @@ for episode in range(10000):
     if len(D_i[lambda_i]) >= m:
         avg_p = np.mean(D_i[lambda_i])
         D_i[lambda_i] = []
+
+        if avg_p < best_performance * 0.9:
+            delta *= 0.5
+        else:
+            delta = min(delta * 1.05, 0.1)
+
         if avg_p >= t_H:
             phi[lambda_i] += delta
+            phi_i_H[lambda_i] += delta
         elif avg_p <= t_L:
             phi[lambda_i] -= delta
-        phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], phi_i_H[lambda_i])
+            phi_i_L[lambda_i] -= delta
+        
+        # Ensure phi stays within the current bounds
+        # phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], phi_i_H[lambda_i])
+        phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], min(phi_i_H[lambda_i], phi_max[lambda_i]))
+
+
     wrapped_env.set_env_parameters(phi)
 
     writer.add_scalar(f'Episode Performance', reward, episode)
@@ -133,7 +151,13 @@ for episode in range(10000):
     writer.add_scalar(f'Episode Average Stability', avg_stability, episode)
     writer.add_scalar(f'Episode Average Balance', avg_balance, episode)
 
-    if episode % 100 == 0:
+    with open("phi_log.txt", "a") as log_file:
+        log_file.write(f"Episode {episode}: Reward = {reward}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
+    
+    with open("param_log.txt", "a") as log_file:
+        log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n")
+    
+    if episode % 10 == 0:
         print(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}")
 
 print(f'Best performance: {best_performance}')
