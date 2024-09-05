@@ -8,6 +8,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from torch.utils.tensorboard import SummaryWriter
 from stable_baselines3.common.monitor import Monitor
 from datetime import datetime
+import pdb
 
 class CustomEnvWrapper(Wrapper):
     def __init__(self, env):
@@ -69,50 +70,57 @@ wrapped_env = CustomEnvWrapper(original_env)
 env = DummyVecEnv([lambda: wrapped_env])
 model = PPO('MlpPolicy', env, verbose=0)
 
+parameters_num = 6
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
 phi_i_L = np.array([3.8, 2.7, 5, 0.01, 0.01, 0.01])  # Lower bounds for masses and frictions
 phi_i_H = np.array([4.9, 3.6, 6.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
-phi = np.random.uniform(phi_i_L, phi_i_H)
 
-
-# phi_min = np.array([3.0, 2.0, 4.0, 0, 0, 0])
+phi_min = np.array([3.0, 2.0, 4.0, 0, 0, 0])
 phi_max = np.array([12.5, 12.5, 12.5, 8, 8, 8])
 
 #step size for adjusting phi_i1
 delta = 0.1
 #performance thresholds for adjusting bounds
-t_L, t_H = 0.4, 0.6
+t_L, t_H = 900, 1200
 # num samples required before adjusting bounds
 m = 10
 
-D_L = [[] for _ in range(len(phi))]
-D_H = [[] for _ in range(len(phi))]
+D_L = [[] for _ in range(parameters_num)]
+D_H = [[] for _ in range(parameters_num)]
+D_i = [[] for _ in range(parameters_num)]
+
 performance_history = []
 speed_history = []
 stability_history = []
 balance_history = []
 
-best_phi = phi.copy() # print best params
+best_param = [] # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/tensor_board3/')
+writer = SummaryWriter('auto_dr/tensor_board4/')
 
 
 for episode in range(10000):
-    lambda_i = np.random.choice(len(phi))
+    phi = np.random.uniform(phi_i_L, phi_i_H)
+    # select parameter
+    lambda_i = np.random.choice(parameters_num)
+    # decide from lower or higher bound
     x = np.random.rand()
     if x < 0.5:
-        env_param = phi_i_L[lambda_i]
-        D_i = D_L
+        phi[lambda_i] = phi_i_L[lambda_i]
+        D_i[lambda_i] = D_L[lambda_i]
     else:
-        env_param = phi_i_H[lambda_i]
-        D_i = D_H
+        phi[lambda_i] = phi_i_H[lambda_i]
+        D_i[lambda_i] = D_H[lambda_i]
     
-    wrapped_env.set_env_parameter(lambda_i, env_param)
+    wrapped_env.set_env_parameters(phi)
     model.learn(total_timesteps=1000)
     reward, avg_speed, avg_stability, avg_balance = evaluate_performance(env, model)
 
+    with open("env_param_log.txt", "a") as log_file:
+       log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {phi}\n")
+    
     D_i[lambda_i].append(reward)
     performance_history.append(reward)
     speed_history.append(avg_speed)
@@ -121,46 +129,56 @@ for episode in range(10000):
 
     if reward > best_performance:
         best_performance = reward
-        best_phi = phi.copy()
+        best_param = phi
+
+    with open("lambda_log.txt", "a") as log_file:
+        log_file.write(f"Episode {episode}: Reward = {reward}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
 
     if len(D_i[lambda_i]) >= m:
         avg_p = np.mean(D_i[lambda_i])
         D_i[lambda_i] = []
 
-        if avg_p < best_performance * 0.9:
-            delta *= 0.5
-        else:
-            delta = min(delta * 1.05, 0.1)
-
+        # if avg_p < best_performance * 0.9:
+        #     # avoid vanishing
+        #     delta = max(delta * 0.5, 0.25)
+        # else:
+        #     delta = min(delta * 1.05, 0.1)
         if avg_p >= t_H:
-            phi[lambda_i] += delta
-            phi_i_H[lambda_i] += delta
+            if x < 0.5:
+                phi_i_L[lambda_i] += delta
+                action = f"phi_i_L[{lambda_i}] increased by {delta}"
+            else:
+                phi_i_H[lambda_i] += delta
+                action = f"phi_i_H[{lambda_i}] increased by {delta}"
+
         elif avg_p <= t_L:
-            phi[lambda_i] -= delta
-            phi_i_L[lambda_i] -= delta
+            if x < 0.5:
+                phi_i_L[lambda_i] = max(phi_i_L[lambda_i] - delta, phi_min[lambda_i])
+                action = f"phi_i_L[{lambda_i}] decreased by {delta}"
+            else:
+                phi_i_H[lambda_i] = max(phi_i_H[lambda_i] - delta, phi_min[lambda_i])
+                action = f"phi_i_H[{lambda_i}] decreased by {delta}"
+
+        with open("update_bound_log.txt", "a") as log_file:
+            log_file.write(f"Episode {episode}: lambda_i = {lambda_i}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}, Action: {action}\n")
+ 
         
         # Ensure phi stays within the current bounds
         # phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], phi_i_H[lambda_i])
-        phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], min(phi_i_H[lambda_i], phi_max[lambda_i]))
+        # phi[lambda_i] = np.clip(phi[lambda_i], phi_i_L[lambda_i], min(phi_i_H[lambda_i], phi_max[lambda_i]))
 
 
-    wrapped_env.set_env_parameters(phi)
+    #wrapped_env.set_env_parameters(phi)
 
     writer.add_scalar(f'Episode Performance', reward, episode)
     writer.add_scalar(f'Episode Average Speed', avg_speed, episode)
     writer.add_scalar(f'Episode Average Stability', avg_stability, episode)
     writer.add_scalar(f'Episode Average Balance', avg_balance, episode)
-
-    with open("phi_log.txt", "a") as log_file:
-        log_file.write(f"Episode {episode}: Reward = {reward}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
-    
-    with open("param_log.txt", "a") as log_file:
-        log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n")
-    
+        
     if episode % 10 == 0:
-        print(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}")
+        print(f"Episode {episode}: Reward = {reward}, Parameters = {phi}")
 
 print(f'Best performance: {best_performance}')
-print(f'Best parameters: {best_phi}')
+print(f'Best parameters: {best_param}')
 
 writer.close()
