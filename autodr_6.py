@@ -82,7 +82,8 @@ balance_history = []
 entropy_ADR_history = []
 
 # Open file to save reward and parameters
-with open('reward_and_parameters6.txt', 'w') as f:
+# Open file to save reward and parameters
+with open('reward_and_parameters.txt', 'w') as f:
     for episode in range(10000):
         lambda_vec = np.random.uniform(phi_L, phi_H)
         i = np.random.choice(6)
@@ -122,10 +123,16 @@ with open('reward_and_parameters6.txt', 'w') as f:
                 elif avg_reward <= t_L:
                     phi_H[i] -= delta
 
-        # Write to the file instead of printing
-        if episode % 10 == 0:
-            log_message = f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
-            f.write(log_message)
+        # Create the log message
+        log_message = f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
+        
+        # Write to the file
+        f.write(log_message)
+        
+        # Print to the terminal
+        print(log_message, end='')  # `end=''` prevents adding an extra newline
+
+
 
 # Function to plot with shading
 def plot_with_shading(x, y, color_line, color_fill, label, ylabel, title):
