@@ -135,7 +135,7 @@ for episode in range(10000):
         print(f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}")
 
 # Plotting and saving plots as PNG files
-plt.figure(figsize=(15, 18))
+plt.figure(figsize=(12, 15))
 
 plt.subplot(2, 1, 1)
 plt.plot(performance_history, label='Total Reward')
