@@ -80,7 +80,7 @@ phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 #step size for adjusting phi_i1
 delta = 0.1
 #performance thresholds for adjusting bounds
-t_L, t_H = 950, 1350
+t_L, t_H = 850, 1150
 # num samples required before adjusting bounds
 m = 10
 
