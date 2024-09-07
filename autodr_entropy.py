@@ -96,7 +96,9 @@ with open('reward_and_parameters.txt', 'w') as f:
         
         model.learn(total_timesteps=1000)
         reward, speed, stability, balance = evaluate_performance(env, model)
-        entropy = np.mean(np.log(phi_H-phi_L))
+        ## Entropy calculation with a small epsilon to avoid NaN
+        epsilon = 1e-8
+        entropy = np.mean(np.log(np.maximum(phi_H - phi_L, epsilon)))
                           
         performance_history.append(reward)
         speed_history.append(speed)
@@ -121,7 +123,7 @@ with open('reward_and_parameters.txt', 'w') as f:
                 if avg_entropy >= t_H:
                     phi_H[i] += delta
                 elif avg_entropy <= t_L:
-                    phi_H[i] -= delta
+                    phi_H[i] = max(phi_H[i] - delta, phi_L[i] + epsilon)  # Ensure phi_H > phi_L
 
         # Create the log message
         log_message = f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
