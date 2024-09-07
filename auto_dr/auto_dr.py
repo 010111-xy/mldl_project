@@ -36,8 +36,6 @@ class CustomEnvWrapper(Wrapper):
         for index, value in enumerate(parameters):
             self.set_env_parameter(index, value)
 
-reward_queue = deque(maxlen=100)
-
 # Training script
 def evaluate_performance(env, model):
     obs = env.reset()
@@ -62,13 +60,11 @@ def evaluate_performance(env, model):
         total_balance += info_dict.get('balance', 0)
         steps += 1
     
-    reward_queue.append(total_reward)
-    avg_reward = np.mean(reward_queue)
 
     avg_speed = total_speed / steps if steps > 0 else 0
     avg_stability = total_stability / steps if steps > 0 else 0
     avg_balance = total_balance / steps if steps > 0 else 0
-    return avg_reward, avg_speed, avg_stability, avg_balance
+    return total_reward, avg_speed, avg_stability, avg_balance
 
 original_env = gym.make('CustomHopper-v0')
 wrapped_env = CustomEnvWrapper(original_env)
