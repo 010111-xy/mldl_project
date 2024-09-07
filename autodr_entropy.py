@@ -121,10 +121,9 @@ with open('reward_and_parameters.txt', 'w') as f:
                 avg_entropy= np.mean(D_H[i])
                 D_H[i] = []
                 if avg_entropy >= t_H:
-                    phi_H[i] += delta
-                elif avg_entropy <= t_L:
                     phi_H[i] = max(phi_H[i] - delta, phi_L[i] + epsilon)  # Ensure phi_H > phi_L
-
+                elif avg_entropy <= t_L:
+                    phi_H[i] += delta
         # Create the log message
         log_message = f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
         
