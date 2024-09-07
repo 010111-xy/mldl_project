@@ -112,9 +112,9 @@ with open('reward_and_parameters.txt', 'w') as f:
                 avg_entropy = np.mean(D_L[i])
                 D_L[i] = []
                 if avg_entropy >= t_H:
-                    phi_L[i] = max(phi_L[i] - delta, phi_min[i])
+                    phi_L[i] += delta 
                 elif avg_entropy <= t_L:
-                    phi_L[i] += delta        
+                    phi_L[i] = max(phi_L[i] - delta, phi_min[i])
         else:
             D_H[i].append(entropy)
             if len(D_H[i]) >= m:
