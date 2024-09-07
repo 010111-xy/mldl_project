@@ -124,7 +124,7 @@ with open('reward_and_parameters.txt', 'w') as f:
                     phi_H[i] -= delta
 
         # Create the log message
-        log_message = f"Episode {episode}: Reward = {reward}, Avg Entropy = {avg_entropy}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
+        log_message = f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
         
         # Write to the file
         f.write(log_message)
