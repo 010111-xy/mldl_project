@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from torch.utils.tensorboard import SummaryWriter
 from stable_baselines3.common.monitor import Monitor
 from datetime import datetime
-import pdb
+from collections import deque
 
 class CustomEnvWrapper(Wrapper):
     def __init__(self, env):
@@ -36,6 +36,8 @@ class CustomEnvWrapper(Wrapper):
         for index, value in enumerate(parameters):
             self.set_env_parameter(index, value)
 
+reward_queue = deque(maxlen=100)
+
 # Training script
 def evaluate_performance(env, model):
     obs = env.reset()
@@ -60,10 +62,13 @@ def evaluate_performance(env, model):
         total_balance += info_dict.get('balance', 0)
         steps += 1
     
+    reward_queue.append(total_reward)
+    avg_reward = np.mean(reward_queue)
+
     avg_speed = total_speed / steps if steps > 0 else 0
     avg_stability = total_stability / steps if steps > 0 else 0
     avg_balance = total_balance / steps if steps > 0 else 0
-    return total_reward, avg_speed, avg_stability, avg_balance
+    return avg_reward, avg_speed, avg_stability, avg_balance
 
 original_env = gym.make('CustomHopper-v0')
 wrapped_env = CustomEnvWrapper(original_env)
@@ -98,7 +103,7 @@ best_param = [] # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/tensor_board5/')
+writer = SummaryWriter('auto_dr/tensor_board6/')
 
 
 for episode in range(10000):
@@ -118,7 +123,7 @@ for episode in range(10000):
     model.learn(total_timesteps=1000)
     reward, avg_speed, avg_stability, avg_balance = evaluate_performance(env, model)
 
-    with open("env_param_log2.txt", "a") as log_file:
+    with open("env_param_log3.txt", "a") as log_file:
        log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {phi}\n")
     
     D_i[lambda_i].append(reward)
@@ -131,7 +136,7 @@ for episode in range(10000):
         best_performance = reward
         best_param = phi
 
-    with open("lambda_log.txt2", "a") as log_file:
+    with open("lambda_log.txt3", "a") as log_file:
         log_file.write(f"Episode {episode}: Reward = {reward}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
 
     if len(D_i[lambda_i]) >= m:
@@ -162,7 +167,7 @@ for episode in range(10000):
                 phi_i_H[lambda_i] = max(phi_i_H[lambda_i] - delta, phi_min[lambda_i])
                 action = f"phi_i_H[{lambda_i}] decreased by {delta}"
 
-        with open("update_bound_log2.txt", "a") as log_file:
+        with open("update_bound_log3.txt", "a") as log_file:
             log_file.write(f"Episode {episode}: lambda_i = {lambda_i}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}, Action: {action}\n")
  
 
