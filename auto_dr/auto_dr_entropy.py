@@ -73,8 +73,10 @@ model = PPO('MlpPolicy', env, verbose=0)
 
 parameters_num = 6
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
-phi_i_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])  # Lower bounds for masses and frictions
-phi_i_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+#phi_i_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])  # Lower bounds for masses and frictions
+#phi_i_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+phi_i_L = np.array([3.5, 2.0, 4.6, 0.01, 0.01, 0.01])
+phi_i_H = np.array([4.5, 3.5, 5.5, 0.5, 0.3, 0.5])
 
 phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 
@@ -99,7 +101,7 @@ best_param = [] # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/tensor_board6/')
+writer = SummaryWriter('auto_dr/tensor_board7/')
 
 
 for episode in range(10000):
@@ -119,7 +121,7 @@ for episode in range(10000):
     model.learn(total_timesteps=1000)
     reward, avg_speed, avg_stability, avg_balance = evaluate_performance(env, model)
 
-    with open("env_param_log3.txt", "a") as log_file:
+    with open("env_param_log4.txt", "a") as log_file:
        log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {phi}\n")
     
     performance_history.append(reward)
@@ -136,7 +138,7 @@ for episode in range(10000):
         best_performance = reward
         best_param = phi
 
-    with open("lambda_log.txt3", "a") as log_file:
+    with open("lambda_log.txt4", "a") as log_file:
         log_file.write(f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
 
     if len(D_i[lambda_i]) >= m:
@@ -169,7 +171,7 @@ for episode in range(10000):
                 phi_i_H[lambda_i] += delta
                 action = f"phi_i_H[{lambda_i}] increased by {delta}"
 
-        with open("update_bound_log3.txt", "a") as log_file:
+        with open("update_bound_log4.txt", "a") as log_file:
             log_file.write(f"Episode {episode}: lambda_i = {lambda_i}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}, Action: {action}\n")
  
 
