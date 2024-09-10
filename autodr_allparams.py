@@ -95,7 +95,8 @@ with open('reward_and_parameters_AP.txt', 'w') as f:
         speed_history.append(speed)
         stability_history.append(stability)
         balance_history.append(balance)
-        entropy_ADR_history.append(np.mean(np.log(phi_H-phi_L)))
+        entropy = np.mean(np.log(phi_H-phi_L))
+        entropy_ADR_history.append(entropy)
 
         D.append(reward)
             
@@ -114,7 +115,7 @@ with open('reward_and_parameters_AP.txt', 'w') as f:
                     phi_H -= delta
 
         # Create the log message
-        log_message = f"Episode {episode}: Reward = {reward}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
+        log_message = f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, Parameters = {wrapped_env.env.model.body_mass.tolist() + wrapped_env.env.model.dof_frictionloss.tolist()}\n"
         
         # Write to the file
         f.write(log_message)
