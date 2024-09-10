@@ -109,7 +109,7 @@ phi_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])
 phi_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])
 phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 delta = 0.1 
-t_L, t_H = 500, 1000  # Adjust these thresholds as needed
+t_L, t_H = 0.2, 1.5  # Adjust these thresholds as needed
 m = 10
 
 D_L = [[] for _ in range(6)]
