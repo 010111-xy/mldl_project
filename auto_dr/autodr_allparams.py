@@ -72,7 +72,7 @@ phi_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])
 phi_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])
 phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 delta = 0.1 
-t_L, t_H = 900, 1200
+t_L, t_H = 850, 1150
 m = 10
 
 D = []
@@ -83,11 +83,11 @@ balance_history = []
 entropy_ADR_history = []
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/all_params/')
+writer = SummaryWriter('auto_dr/all_params2/')
 
 # Open file to save reward and parameters
 # Open file to save reward and parameters
-with open('reward_and_parameters_AP.txt', 'w') as f:
+with open('reward_and_parameters_AP2.txt', 'w') as f:
     for episode in range(10000):
         lambda_vec = np.random.uniform(phi_L, phi_H)
         x = np.random.rand()
@@ -100,7 +100,10 @@ with open('reward_and_parameters_AP.txt', 'w') as f:
         speed_history.append(speed)
         stability_history.append(stability)
         balance_history.append(balance)
-        entropy = np.mean(np.log(phi_H-phi_L))
+
+        epsilon = 1e-8
+        entropy = np.mean(np.log(np.maximum(phi_H - phi_L, epsilon)))
+        #entropy = np.mean(np.log(phi_H-phi_L))
         entropy_ADR_history.append(entropy)
 
         D.append(reward)
@@ -154,30 +157,30 @@ episodes = np.arange(len(performance_history))
 plt.figure()
 plot_with_shading(episodes, performance_history, 'darkblue', 'lightblue', 'Total Reward', 'Reward', 'Performance of the Model')
 plt.tight_layout()
-plt.savefig('performance_plotAP.png')
+plt.savefig('performance_plotAP2.png')
 
 # Plot Speed
 plt.figure()
 plot_with_shading(episodes, speed_history, 'darkgreen', 'lightgreen', 'Speed', 'Speed', 'Speed Throughout Training')
 plt.tight_layout()
-plt.savefig('speed_plotAP.png')
+plt.savefig('speed_plotAP2.png')
 
 # Plot Stability
 plt.figure()
 plot_with_shading(episodes, stability_history, 'darkorange', 'navajowhite', 'Stability', 'Stability', 'Stability Throughout Training')
 plt.tight_layout()
-plt.savefig('stability_plotAP.png')
+plt.savefig('stability_plotAP2.png')
 
 # Plot Balance
 plt.figure()
 plot_with_shading(episodes, balance_history, 'darkred', 'lightcoral', 'Balance', 'Balance', 'Balance Throughout Training')
 plt.tight_layout()
-plt.savefig('balance_plotAP.png')
+plt.savefig('balance_plotAP2.png')
 
 # Plot ADR entropy
 plt.figure()
 plot_with_shading(episodes, entropy_ADR_history, 'purple', 'plum', 'ADR Entropy', 'Entropy', 'ADR Entropy Throughout Training')
 plt.tight_layout()
-plt.savefig('entropy_plotAP.png')
+plt.savefig('entropy_plotAP2.png')
 
 plt.show()
