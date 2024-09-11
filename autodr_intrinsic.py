@@ -109,7 +109,7 @@ phi_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])
 phi_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])
 phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 delta = 0.1 
-t_L, t_H = 100, 150   # Adjust these thresholds as needed
+t_L, t_H = 80, 175   # Adjust these thresholds as needed
 m = 10
 
 D_L = [[] for _ in range(6)]
@@ -123,7 +123,7 @@ intrinsic_reward_history = []
 intrinsic_reward = 0
 
 # Open file to save reward and parameters
-with open('reward_and_parameters_intrinsic.txt', 'w') as f:
+with open('reward_and_parameters_intrinsic_80175.txt', 'w') as f:
     for episode in range(10000):
         lambda_vec = np.random.uniform(phi_L, phi_H)
         i = np.random.choice(6)
@@ -210,36 +210,36 @@ episodes = np.arange(len(performance_history))
 plt.figure()
 plot_with_shading(episodes, performance_history, 'darkblue', 'lightblue', 'Total Reward', 'Reward', 'Performance of the Model')
 plt.tight_layout()
-plt.savefig('performance_intrinsic.png')
+plt.savefig('performance_intrinsic_80175.png')
 
 # Plot Speed
 plt.figure()
 plot_with_shading(episodes, speed_history, 'darkgreen', 'lightgreen', 'Speed', 'Speed', 'Speed Throughout Training')
 plt.tight_layout()
-plt.savefig('speed_intrinsic.png')
+plt.savefig('speed_intrinsic_80175.png')
 
 # Plot Stability
 plt.figure()
 plot_with_shading(episodes, stability_history, 'darkorange', 'navajowhite', 'Stability', 'Stability', 'Stability Throughout Training')
 plt.tight_layout()
-plt.savefig('stability_intrinsic.png')
+plt.savefig('stability_intrinsic_80175.png')
 
 # Plot Balance
 plt.figure()
 plot_with_shading(episodes, balance_history, 'darkred', 'lightcoral', 'Balance', 'Balance', 'Balance Throughout Training')
 plt.tight_layout()
-plt.savefig('balance_intrinsic.png')
+plt.savefig('balance_intrinsic_80175.png')
 
 # Plot ADR entropy
 plt.figure()
 plot_with_shading(episodes, entropy_ADR_history, 'purple', 'plum', 'ADR Entropy', 'Entropy', 'ADR Entropy Throughout Training')
 plt.tight_layout()
-plt.savefig('entropy_intrinsic.png')
+plt.savefig('entropy_intrinsic_80175.png')
 
 # Plot ADR entropy
 plt.figure()
-plot_with_shading(episodes, intrinsic_reward_history, 'teal', 'lightcyan', 'Intrinsic Reward', 'Intrinsic Reward', 'ADR Entropy Throughout Training')
+plot_with_shading(episodes, intrinsic_reward_history, 'teal', 'lightcyan', 'Intrinsic Reward', 'Intrinsic Reward', 'Intrinsic Reward Throughout Training')
 plt.tight_layout()
-plt.savefig('intrinsic_reward_intrinsic.png')
+plt.savefig('intrinsic_reward_intrinsic_80175.png')
 
 plt.show()
