@@ -73,15 +73,17 @@ model = PPO('MlpPolicy', env, verbose=0)
 
 parameters_num = 6
 # ADR Parameters: Define custom ranges for thigh, leg, and foot masses
-phi_i_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])  # Lower bounds for masses and frictions
-phi_i_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+#phi_i_L = np.array([3.5, 2.3, 4.6, 0.001, 0.001, 0.001])  # Lower bounds for masses and frictions
+#phi_i_H = np.array([4.5, 3.3, 5.5, 0.5, 0.5, 0.5])  # Upper bounds for masses and frictions
+phi_i_L = np.array([3.5, 2.0, 4.6, 0.01, 0.01, 0.01])
+phi_i_H = np.array([4.5, 3.5, 5.5, 0.5, 0.3, 0.5])
 
 phi_min = np.array([0.1, 0.1, 0.1, 0, 0, 0])
 
 #step size for adjusting phi_i1
 delta = 0.1
 #performance thresholds for adjusting bounds
-t_L, t_H = 900, 1200
+t_L, t_H = 0.6, 1.0
 # num samples required before adjusting bounds
 m = 10
 
@@ -99,7 +101,7 @@ best_param = [] # print best params
 best_performance = -np.inf
 
 print(f'Start AutoDR Training: {datetime.now()}')
-writer = SummaryWriter('auto_dr/900_1200case/')
+writer = SummaryWriter('auto_dr/tensor_board7/')
 
 
 for episode in range(10000):
@@ -119,34 +121,47 @@ for episode in range(10000):
     model.learn(total_timesteps=1000)
     reward, avg_speed, avg_stability, avg_balance = evaluate_performance(env, model)
 
-    with open("env_param_log9001200.txt", "a") as log_file:
+    with open("env_param_log4.txt", "a") as log_file:
        log_file.write(f"Episode {episode}: Reward = {reward}, Parameters = {phi}\n")
     
-    D_i[lambda_i].append(reward)
     performance_history.append(reward)
     speed_history.append(avg_speed)
     stability_history.append(avg_stability)
     balance_history.append(avg_balance)
-    
+
     epsilon = 1e-8
     entropy = np.mean(np.log(np.maximum(phi_i_H - phi_i_L, epsilon)))
-    
+    D_i[lambda_i].append(entropy)
+
+    writer.add_scalar(f'Episode Entropy ADR', entropy, episode)
     if reward > best_performance:
         best_performance = reward
         best_param = phi
 
-    with open("lambda_log9001200.txt", "a") as log_file:
-        log_file.write(f"Episode {episode}: Reward = {reward}, Entropy = {entropy},  lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
+    with open("lambda_log.txt4", "a") as log_file:
+        log_file.write(f"Episode {episode}: Reward = {reward}, Entropy = {entropy}, lambda_i = {lambda_i}, phi = {phi[lambda_i]}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}\n")
 
     if len(D_i[lambda_i]) >= m:
-        avg_p = np.mean(D_i[lambda_i])
+        avg_entropy = np.mean(D_i[lambda_i])
         D_i[lambda_i] = []
         if x < 0.5:
             D_L[lambda_i] = []
         else:
             D_H[lambda_i] = []
 
-        if avg_p >= t_H:
+        if avg_entropy >= t_H:
+            # want to be more stable
+            if x < 0.5:
+                # increase lower bound
+                phi_i_L[lambda_i] += delta
+                action = f"phi_i_L[{lambda_i}] increased by {delta}"
+            else:
+                # decrease upper bound
+                phi_i_H[lambda_i] = max(phi_i_H[lambda_i] - delta, phi_i_L[lambda_i] + epsilon)
+                action = f"phi_i_H[{lambda_i}] decreased by {delta}"
+            
+        elif avg_entropy <= t_L:
+            # need to explore enough
             if x < 0.5:
                 # decrease lower bound
                 phi_i_L[lambda_i] = max(phi_i_L[lambda_i] - delta, phi_min[lambda_i])
@@ -155,18 +170,8 @@ for episode in range(10000):
                 # increase upper bound
                 phi_i_H[lambda_i] += delta
                 action = f"phi_i_H[{lambda_i}] increased by {delta}"
-            
-        elif avg_p <= t_L:
-            if x < 0.5:
-                # increase lower bound
-                phi_i_L[lambda_i] += delta
-                action = f"phi_i_L[{lambda_i}] increased by {delta}"
-            else:
-                # decrease upper bound
-                phi_i_H[lambda_i] = max(phi_i_H[lambda_i] - delta, phi_min[lambda_i])
-                action = f"phi_i_H[{lambda_i}] decreased by {delta}"
 
-        with open("update_bound_log9001200.txt", "a") as log_file:
+        with open("update_bound_log4.txt", "a") as log_file:
             log_file.write(f"Episode {episode}: lambda_i = {lambda_i}, phi_i_L = {phi_i_L[lambda_i]}, phi_i_H = {phi_i_H[lambda_i]}, Action: {action}\n")
  
 
@@ -174,10 +179,9 @@ for episode in range(10000):
     writer.add_scalar(f'Episode Average Speed', avg_speed, episode)
     writer.add_scalar(f'Episode Average Stability', avg_stability, episode)
     writer.add_scalar(f'Episode Average Balance', avg_balance, episode)
-    writer.add_scalar(f'Episode Entropy', entropy, episode)
     
     if episode % 10 == 0:
-        print(f"Episode {episode}: Reward = {reward}")
+        print(f"Episode {episode}: Reward = {reward}, Parameters = {phi}")
 
 print(f'Best performance: {best_performance}')
 print(f'Best parameters: {best_param}')

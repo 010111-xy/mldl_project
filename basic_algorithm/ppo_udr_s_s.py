@@ -5,15 +5,19 @@ from env.custom_hopper import *
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 
 
 def main():
+  # writer = SummaryWriter('basic_algorithm/tensor_board/source_source2')
+
   env = gym.make('CustomHopper-source-v0')
-  print(env.sim.model.body_names)
-  print(env.sim.model.body_mass[1])
-  print(env.sim.model.body_mass[2]) 
-  print(env.sim.model.body_mass[3])
-  print(env.sim.model.body_mass[4])
+  # print(env.sim.model.body_names)
+  # print(env.sim.model.body_mass[1])
+  # print(env.sim.model.body_mass[2]) 
+  # print(env.sim.model.body_mass[3])
+  # print(env.sim.model.body_mass[4])
   mass_bounds = {
     'thigh': {
       'low': 3.5,
@@ -52,20 +56,31 @@ def main():
 
   # Create the PPO model
   model = PPO("MlpPolicy", source_vec_env, verbose=0)
-
+  print('Train Start Time:', datetime.now())
   # Train the model
   model.learn(total_timesteps=1000000)
-
+  print('Train End Time:', datetime.now())
   # Evaluate the policy in the source environment
-  mean_reward, std_reward = evaluate_policy(model, source_vec_env, n_eval_episodes=10)
-  print(f"Mean reward in source environment: {mean_reward} +/- {std_reward}")
+  # mean_reward, std_reward = evaluate_policy(model, source_vec_env, n_eval_episodes=10)
+  rewards = []
 
-  model.save("task6_trained_model.zip")
+  print('Evaluation Start Time:', datetime.now())
+  # for episode in range(50):
+  #   episode_reward, _ = evaluate_policy(model, env, n_eval_episodes=1, return_episode_rewards=True)
+  #   rewards.append(episode_reward[0])
+  #   writer.add_scalar('UDR Training/Episode Reward', episode_reward[0], episode)
+
+  print('Evaluation End Time:', datetime.now())
+
+  mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=50)
+  print(f'Source -> Source Mean Reward: {mean_reward}, Std Reward: {std_reward}')
+  #model.save("basic_algorithm/model/ppo_udr1.zip")
+  #writer.close()
 
 
 def test():
   # Load the trained model
-  trained_model = PPO.load("task6_trained_model.zip")
+  trained_model = PPO.load("model/ppo_udr.zip")
 
   # Create environments for source and target environments
   source_env = gym.make('CustomHopper-source-v0')
