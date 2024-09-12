@@ -7,8 +7,8 @@ import torch
 import gym
 
 from datetime import datetime
-from basic_algorithm.reinforce_normal import REINFORCE as REINFORCE_NORMAL, PolicyNetwork as REINFORCE_NORMAL_POLICY
-from basic_algorithm.reinforce_xavier import REINFORCE as REINFORCE_XAVIER, PolicyNetwork as REINFORCE_XAVIER_POLICY
+from reinforce.reinforce_normal import REINFORCE as REINFORCE_NORMAL, PolicyNetwork as REINFORCE_NORMAL_POLICY
+from reinforce.reinforce_xavier import REINFORCE as REINFORCE_XAVIER, PolicyNetwork as REINFORCE_XAVIER_POLICY
 from env.custom_hopper import *
 from torch.utils.tensorboard import SummaryWriter
 

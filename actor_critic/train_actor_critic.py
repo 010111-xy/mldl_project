@@ -7,8 +7,8 @@ import torch
 import gym
 
 from datetime import datetime
-from basic_algorithm.actor_critic_normal import Agent as AC_NORAML_AGENT, Policy as AC_NORAML_POLICY
-from basic_algorithm.actor_critic_xavier import Agent as AC_XAVIER_AGENT, Policy as AC_XAVIER_POLICY
+from actor_critic.actor_critic_normal import Agent as AC_NORAML_AGENT, Policy as AC_NORAML_POLICY
+from actor_critic.actor_critic_xavier import Agent as AC_XAVIER_AGENT, Policy as AC_XAVIER_POLICY
 from env.custom_hopper import *
 from torch.utils.tensorboard import SummaryWriter
 
