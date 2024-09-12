@@ -10,7 +10,7 @@ from datetime import datetime
 
 
 def main():
-  writer = SummaryWriter('basic_algorithm/tensor_board/domain_randomization')
+  # writer = SummaryWriter('basic_algorithm/tensor_board/source_source2')
 
   env = gym.make('CustomHopper-source-v0')
   # print(env.sim.model.body_names)
@@ -65,15 +65,17 @@ def main():
   rewards = []
 
   print('Evaluation Start Time:', datetime.now())
-  for episode in range(1000):
-    episode_reward, _ = evaluate_policy(model, env, n_eval_episodes=1, return_episode_rewards=True)
-    rewards.append(episode_reward[0])
-    writer.add_scalar('UDR Training/Episode Reward', episode_reward[0], episode)
+  # for episode in range(50):
+  #   episode_reward, _ = evaluate_policy(model, env, n_eval_episodes=1, return_episode_rewards=True)
+  #   rewards.append(episode_reward[0])
+  #   writer.add_scalar('UDR Training/Episode Reward', episode_reward[0], episode)
 
   print('Evaluation End Time:', datetime.now())
-  print(f'Mean Reward: {np.mean(rewards)}')
-  model.save("basic_algorithm/model/ppo_udr.zip")
-  writer.close()
+
+  mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=50)
+  print(f'Source -> Source Mean Reward: {mean_reward}, Std Reward: {std_reward}')
+  #model.save("basic_algorithm/model/ppo_udr1.zip")
+  #writer.close()
 
 
 def test():
