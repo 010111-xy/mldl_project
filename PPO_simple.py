@@ -1,6 +1,7 @@
 import gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
+from env.custom_hopper import *
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
